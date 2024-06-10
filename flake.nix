@@ -18,6 +18,7 @@
         nativeBuildInputs = [
           pkgs.gnumake
           pkgs.clang
+          pkgs.clang-tools
         ];
         buildPhase = "make";
         installPhase = ''
