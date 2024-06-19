@@ -20,10 +20,11 @@
           pkgs.clang
           pkgs.clang-tools
         ];
-        buildPhase = "make";
+        buildPhase = "make && ./dist/test";
         installPhase = ''
-          mkdir -p $out/bin
-          mv test $out/bin
+          mkdir -p $out/bin $out/lib
+          mv dist/test $out/bin
+          mv dist/strlib.so $out/lib
         '';
       };
   in rec {

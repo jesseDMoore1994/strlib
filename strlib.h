@@ -46,6 +46,12 @@
 typedef struct strlib_str_t strlib_str_t;
 
 // Result codes returned in the result type. Useful for operation validation.
+typedef struct {
+  size_t start; // Beginning index.
+  size_t end;   // Ending index.
+} strlib_index_pair_t;
+
+// Result codes returned in the result type. Useful for operation validation.
 typedef enum {
   STRLIB_E_SUCCESS,   // Code for success.
   STRLIB_E_NO_MEMORY, // Code for out of memory.
@@ -83,6 +89,50 @@ typedef struct {
 **     1) An strlib string at the the address stored in the pointer `s`.
 */
 strlib_result_t strlib_str_init(strlib_str_t **s);
+
+/* Description: Finds substring `c` in strlib string `s` and stores indicies
+**     into array `position`.
+** Parameters:
+**     s             - A pointer to where the strlib string is to be held.
+**     positions     - The indicies where the character should be found.
+**     num_positions - The number of positions found.
+**     positons_size - The maximum number of positions that can be stored.
+**     c             - The character to be found.
+** Results:
+**     STRLIB_E_SUCCESS   - When the function exits successfully.
+**     STRLIB_E_BAD_SIZE  - When the positions buffer would be overrun.
+** Side Effects:
+**     1) The size_t array `positions` is updated with the indicies where
+**         `c` can be found.
+**     1) The size_t value pointed to `positions_size` is updated with the
+**         number of `c` characters that were found.
+*/
+strlib_result_t strlib_str_find_char(strlib_str_t *s, size_t *positions,
+                                     size_t *num_positions,
+                                     const size_t positions_size, const char c);
+
+/* Description: Finds sub-string `substr` in strlib string `s` and stores
+**     indicies into array `position`.
+** Parameters:
+**     s             - A pointer to where the strlib string is to be held.
+**     positions     - The strlib index pairs slice where the characters
+**                         should be found.
+**     num_positions - The number of positions found.
+**     positons_size - The maximum number of positions that can be stored.
+**     c             - The character to be found.
+** Results:
+**     STRLIB_E_SUCCESS   - When the function exits successfully.
+**     STRLIB_E_BAD_SIZE  - When the positions buffer would be overrun.
+** Side Effects:
+**     1) The size_t array `positions` is updated with the indicies where
+**         `c` can be found.
+**     1) The size_t value pointed to `positions_size` is updated with the
+**         number of `c` characters that were found.
+*/
+strlib_result_t strlib_str_find_substr(strlib_str_t *s, strlib_index_pair_t *positions,
+                                       size_t *num_positions,
+                                       const size_t positions_size,
+                                       const char *substr);
 
 /* Description: Inserts character `c` into strlib string `s` at index
 **     `position`.
@@ -149,22 +199,21 @@ strlib_result_t strlib_str_get_char(const strlib_str_t *s, char *c,
 **     position `start_pos` to position `end_pos` into the character
 **     array `buf`, up to size `size`.
 ** Parameters:
-**     s         - A pointer to where the strlib string is to be held.
-**     buf       - The character array location to store the string contents.
-**     size      - The maximum size of the buffer.
-**     start_pos - The first index to copy from in the string.
-**     end_pos   - The last index to copy from in the string.
+**     s    - A pointer to where the strlib string is to be held.
+**     buf  - The character array location to store the string contents.
+**     size - The maximum size of the buffer.
+**     pos  - The start and end indicies to copy from and to in the string.
 ** Results:
 **     STRLIB_E_SUCCESS   - When the function exits successfully.
 **     STRLIB_E_BAD_INDEX - When the function finds index out of bounds.
 **     STRLIB_E_BAD_SIZE  - When the function finds the target buffer too small.
 ** Side Effects:
-**     1) The charcters from position `start_pos` to `end_pos` of strlib string
+**     1) The charcters from position `pos.start` to `pos.end` of strlib string
 **         `s` are placed into `buf`.
 */
 strlib_result_t strlib_str_get_chars(const strlib_str_t *s, char *buf,
-                                     const size_t size, const size_t start_pos,
-                                     const size_t end_pos);
+                                     const size_t size,
+                                     const strlib_index_pair_t pos);
 
 /* Description: Stores the length of the strlib string `s` in `length`.
 ** Parameters:
@@ -232,8 +281,8 @@ strlib_result_t strlib_str_remove_char(strlib_str_t *s, const size_t position);
 **     1) The charcters from position `start_pos` to `end_pos` of strlib string
 **         `s` are removed.
 */
-strlib_result_t strlib_str_remove_chars(strlib_str_t *s, const size_t start_pos,
-                                        const size_t end_pos);
+strlib_result_t strlib_str_remove_chars(strlib_str_t *s,
+                                        const strlib_index_pair_t pos);
 
 /* Description: Sets the contents of the strlib string `s` using
 **     the character array `buf`, up to the size of `size`.

@@ -49,6 +49,8 @@ static void test_char_operations(void) {
   char c;
   strlib_result_t ret1;
   size_t x;
+  size_t size_t_positions[256] = {(size_t)-1};
+  strlib_index_pair_t pair_t_positions[256] = {0};
 
   ret1 = strlib_str_init(&s);
   assert(ret1.code == STRLIB_E_SUCCESS);
@@ -60,7 +62,8 @@ static void test_char_operations(void) {
   assert(ret1.code == STRLIB_E_SUCCESS);
   assert(c == 'f');
 
-  ret1 = strlib_str_get_chars(s, buf, 4, 2, 0);
+  ret1 = strlib_str_get_chars(s, buf, 4,
+                              (strlib_index_pair_t){.start = 2, .end = 0});
   assert(ret1.code == STRLIB_E_SUCCESS);
   assert(strcmp(buf, "fub") == 0);
 
@@ -105,7 +108,8 @@ static void test_char_operations(void) {
   assert(ret1.code == STRLIB_E_SUCCESS);
   assert(x == 6);
 
-  ret1 = strlib_str_remove_chars(s, 0, 4);
+  ret1 =
+      strlib_str_remove_chars(s, (strlib_index_pair_t){.start = 0, .end = 4});
   assert(ret1.code == STRLIB_E_SUCCESS);
   ret1 = strlib_str_get(s, buf, 256);
   assert(ret1.code == STRLIB_E_SUCCESS);
@@ -114,13 +118,31 @@ static void test_char_operations(void) {
   assert(ret1.code == STRLIB_E_SUCCESS);
   assert(x == 1);
 
+  ret1 = strlib_str_set(s, "buffer", 7);
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  ret1 = strlib_str_find_char(s, size_t_positions, &x, 256, 'f');
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  assert(x == 2);
+  assert(size_t_positions[0] == 2);
+  assert(size_t_positions[1] == 3);
+  ret1 = strlib_str_find_substr(s, pair_t_positions, &x, 256, "ff");
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  assert(x == 1);
+  assert(pair_t_positions[0].start == 2);
+  assert(pair_t_positions[0].end == 3);
+
   ret1 = strlib_str_free(s);
   assert(ret1.code == STRLIB_E_SUCCESS);
 }
 
 int main(void) {
+  int x[100] = {0};
+  printf("x[100] - x[0]: %d\n", (&x[100] - &x[0]));
   test_init();
+  printf("test_init() passed!\n");
   test_set_get();
+  printf("test_set_get() passed!\n");
   test_char_operations();
+  printf("test_char_operations() passed!\n");
   return 0;
 }
