@@ -19,8 +19,9 @@
           pkgs.gnumake
           pkgs.clang
           pkgs.clang-tools
+          pkgs.valgrind
         ];
-        buildPhase = "make && ./dist/test";
+        buildPhase = "make && valgrind --leak-check=yes ./dist/test";
         installPhase = ''
           mkdir -p $out/bin $out/lib
           mv dist/test $out/bin
@@ -31,7 +32,7 @@
     defaultApp = inputs.utils.lib.mkApp { drv = defaultPackage; };
     defaultPackage = strlib;
     devShell = pkgs.mkShell {
-      buildInputs = [ strlib pkgs.valgrind pkgs.clang ];
+      buildInputs = [ pkgs.valgrind pkgs.clang ];
     };
   });
 }

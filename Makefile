@@ -26,7 +26,7 @@ $(OBJDIR)/%.o : %.c $(HFILES) $(CFILES)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Consider these targets as targets, not files
-.PHONY : all format clean
+.PHONY : all format clean test
 
 # Build everything: compile all C (changed) files and
 # link the object files into an executable (app)
@@ -42,19 +42,25 @@ $(OBJDIR):
 	mkdir $(OBJDIR)
 
 # Build shared library, copy library header file to $(DISTDIR)
-dist/strlib.so: $(OFILES)
+$(DISTDIR)/strlib.so: $(OFILES)
 	mkdir -p $(DISTDIR)
 	$(CC) $(LFLAGS) $(WRAP) $(OFILES) -shared -o $(DISTDIR)/strlib.so
 
 # Build test executable to validate library
-dist/test: $(OFILES)
+$(DISTDIR)/test: $(OFILES)
 	mkdir -p $(DISTDIR)
 	$(CC) $(LFLAGS) $(OFILES) -o $(DISTDIR)/test
 
 format:
-	clang-format -i *.[ch]
+	clang-format -style=google -i *.[ch]
 
 # Clean up by removing the $(OBJDIR) and $(DISTDIR) directories
 clean:
 	rm -rf $(OBJDIR)
 	rm -rf $(DISTDIR)
+
+test: $(DISTDIR)/test
+	valgrind --leak-check=full \
+         --show-leak-kinds=all \
+         --track-origins=yes \
+         $(DISTDIR)/test
