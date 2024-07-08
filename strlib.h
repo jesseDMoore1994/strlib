@@ -35,6 +35,7 @@
 */
 
 // Must use standard c types.
+#include <stdbool.h>
 #include <stddef.h>
 
 /*
@@ -49,7 +50,7 @@ typedef struct strlib_str_t strlib_str_t;
 typedef struct {
   size_t start;  // Beginning index.
   size_t end;    // Ending index.
-} strlib_index_pair_t;
+} strlib_slice_t;
 
 // Result codes returned in the result type. Useful for operation validation.
 typedef enum {
@@ -88,7 +89,7 @@ typedef struct {
 ** Side Effects:
 **     1) An strlib string at the the address stored in the pointer `s`.
 */
-strlib_result_t strlib_str_init(strlib_str_t **s);
+strlib_result_t strlib_init(strlib_str_t **s);
 
 /* Description: Finds character `c` in strlib string `s` and stores indicies
 **     into array `position`.
@@ -107,9 +108,9 @@ strlib_result_t strlib_str_init(strlib_str_t **s);
 **     1) The size_t value pointed to `num_positions` is updated with the
 **         number of `c` characters that were found.
 */
-strlib_result_t strlib_str_find_char(strlib_str_t *s, size_t *positions,
-                                     size_t *num_positions,
-                                     const size_t positions_size, const char c);
+strlib_result_t strlib_find_char(strlib_str_t *s, size_t *positions,
+                                 size_t *num_positions,
+                                 const size_t positions_size, const char c);
 
 /* Description: Finds sub-string `substr` in strlib string `s` and stores
 **     indicies into array `position`.
@@ -124,16 +125,15 @@ strlib_result_t strlib_str_find_char(strlib_str_t *s, size_t *positions,
 **     STRLIB_E_SUCCESS   - When the function exits successfully.
 **     STRLIB_E_BAD_SIZE  - When the positions buffer would be overrun.
 ** Side Effects:
-**     1) The strlib_index_pair_t array `positions` is updated with the slices
+**     1) The strlib_slice_t array `positions` is updated with the slices
 **         where `substr` can be found.
 **     1) The size_t value pointed to `num_positions` is updated with the
 **         number of occurences of `substr` that were found.
 */
-strlib_result_t strlib_str_find_substr(strlib_str_t *s,
-                                       strlib_index_pair_t *positions,
-                                       size_t *num_positions,
-                                       const size_t positions_size,
-                                       const char *substr);
+strlib_result_t strlib_find_substr(strlib_str_t *s, strlib_slice_t *positions,
+                                   size_t *num_positions,
+                                   const size_t positions_size,
+                                   const char *substr);
 
 /* Description: Inserts character `c` into strlib string `s` at index
 **     `position`.
@@ -147,8 +147,8 @@ strlib_result_t strlib_str_find_substr(strlib_str_t *s,
 ** Side Effects:
 **     1) The strlib string `s` is updated with the value `c` appropriately.
 */
-strlib_result_t strlib_str_insert_char(strlib_str_t *s, const char c,
-                                       const size_t position);
+strlib_result_t strlib_insert_char(strlib_str_t *s, const char c,
+                                   const size_t position);
 
 /* Description: Inserts characters `cs` into strlib string `s` at index
 **     `position`.
@@ -156,14 +156,16 @@ strlib_result_t strlib_str_insert_char(strlib_str_t *s, const char c,
 **     s        - A pointer to where the strlib string is to be held.
 **     cs       - The characters to be inserted.
 **     position - The index where the character should be inserted.
+**     reversed - True if the string should be inserted in reverse, false
+**                    otherwise.
 ** Results:
 **     STRLIB_E_SUCCESS   - When the function exits successfully.
 **     STRLIB_E_BAD_INDEX - When the function finds index out of bounds.
 ** Side Effects:
 **     1) The strlib string `s` is updated with the value `cs` appropriately.
 */
-strlib_result_t strlib_str_insert_chars(strlib_str_t *s, const char *cs,
-                                        const size_t position);
+strlib_result_t strlib_insert_chars(strlib_str_t *s, const char *cs,
+                                    const size_t position, const bool reversed);
 
 /* Description: Copies the contents of the strlib string `s` into
 **     the character array `buf`, up to the size of `size`.
@@ -177,8 +179,7 @@ strlib_result_t strlib_str_insert_chars(strlib_str_t *s, const char *cs,
 ** Side Effects:
 **     1) The contents of strlib string `s` are placed into `buf`.
 */
-strlib_result_t strlib_str_get(const strlib_str_t *s, char *buf,
-                               const size_t size);
+strlib_result_t strlib_get(const strlib_str_t *s, char *buf, const size_t size);
 
 /* Description: Copies the character of the strlib string `s` at
 **     position `position` to the character `c`.
@@ -193,8 +194,8 @@ strlib_result_t strlib_str_get(const strlib_str_t *s, char *buf,
 **     1) The charcter in position `position` of strlib string `s`
 **         is placed into `c`.
 */
-strlib_result_t strlib_str_get_char(const strlib_str_t *s, char *c,
-                                    const size_t position);
+strlib_result_t strlib_get_char(const strlib_str_t *s, char *c,
+                                const size_t position);
 
 /* Description: Copies the characters of the strlib string `s` from
 **     position `start_pos` to position `end_pos` into the character
@@ -213,9 +214,9 @@ strlib_result_t strlib_str_get_char(const strlib_str_t *s, char *c,
 **     1) The charcters from position `pos.start` to `pos.end` of strlib string
 **         `s` are placed into `buf`.
 */
-strlib_result_t strlib_str_get_chars(const strlib_str_t *s, char *buf,
-                                     const size_t size,
-                                     const strlib_index_pair_t position);
+strlib_result_t strlib_get_chars(const strlib_str_t *s, char *buf,
+                                 const size_t size,
+                                 const strlib_slice_t position);
 
 /* Description: Stores the length of the strlib string `s` in `length`.
 ** Parameters:
@@ -226,7 +227,7 @@ strlib_result_t strlib_str_get_chars(const strlib_str_t *s, char *buf,
 ** Side Effects:
 **     1) The length of strlib string `s` is placed into `length`.
 */
-strlib_result_t strlib_str_get_length(const strlib_str_t *s, size_t *length);
+strlib_result_t strlib_get_length(const strlib_str_t *s, size_t *length);
 
 /* Description: Stores the capacity of the strlib string `s` in `capacity`.
 ** Parameters:
@@ -237,8 +238,7 @@ strlib_result_t strlib_str_get_length(const strlib_str_t *s, size_t *length);
 ** Side Effects:
 **     1) The capacity of strlib string `s` is placed into `capacity`.
 */
-strlib_result_t strlib_str_get_capacity(const strlib_str_t *s,
-                                        size_t *capacity);
+strlib_result_t strlib_get_capacity(const strlib_str_t *s, size_t *capacity);
 
 /* Description: Replaces the character of the strlib string `s` at
 **     position `position` with the character `c`.
@@ -253,11 +253,11 @@ strlib_result_t strlib_str_get_capacity(const strlib_str_t *s,
 **     1) The charcter in position `position` of strlib string `s`
 **         is replaced with `c`.
 */
-strlib_result_t strlib_str_replace_char(strlib_str_t *s, const char c,
-                                        const size_t position);
+strlib_result_t strlib_replace_char(strlib_str_t *s, const char c,
+                                    const size_t position);
 
 /* Description: Replaces the characters of the strlib string `s` at
-**     position `position` with the character `c`.
+**     position `position` with the characters `cs`.
 ** Parameters:
 **     s        - A pointer to where the strlib string is to be held.
 **     cs       - The characters to replace with in the strlib string.
@@ -269,8 +269,23 @@ strlib_result_t strlib_str_replace_char(strlib_str_t *s, const char c,
 **     1) The charcter in position `position` of strlib string `s`
 **         is replaced with `c`.
 */
-strlib_result_t strlib_str_replace_chars(strlib_str_t *s, const char *cs,
-                                         const strlib_index_pair_t position);
+strlib_result_t strlib_replace_chars(strlib_str_t *s, const char *cs,
+                                     const strlib_slice_t position);
+
+/* Description: Replaces the characters of the strlib string `s` that
+**     match sub-string `substr` with the characters `cs`.
+** Parameters:
+**     s      - A pointer to where the strlib string is to be held.
+**     substr - The characters to replace in the strlib string.
+**     cs     - The characters to replace with in the strlib string.
+** Results:
+**     STRLIB_E_SUCCESS   - When the function exits successfully.
+** Side Effects:
+**     1) The charcters matching `substr` in strlib string `s`
+**         are replaced with `cs`.
+*/
+strlib_result_t strlib_replace_substr(strlib_str_t *s, const char *substr,
+                                      const char *cs);
 
 /* Description: Remove the character of the strlib string `s` at
 **     position `position`.
@@ -284,7 +299,7 @@ strlib_result_t strlib_str_replace_chars(strlib_str_t *s, const char *cs,
 **     1) The charcter in position `position` of strlib string `s`
 **         is removed.
 */
-strlib_result_t strlib_str_remove_char(strlib_str_t *s, const size_t position);
+strlib_result_t strlib_remove_char(strlib_str_t *s, const size_t position);
 
 /* Description: Remove the characters of the strlib string `s` between
 **     start position `start_pos` and end position `end_pos`.
@@ -299,8 +314,8 @@ strlib_result_t strlib_str_remove_char(strlib_str_t *s, const size_t position);
 **     1) The charcters from position `start_pos` to `end_pos` of strlib string
 **         `s` are removed.
 */
-strlib_result_t strlib_str_remove_chars(strlib_str_t *s,
-                                        const strlib_index_pair_t position);
+strlib_result_t strlib_remove_chars(strlib_str_t *s,
+                                    const strlib_slice_t position);
 
 /* Description: Removes sub-string `substr` in strlib string `s`.
 ** Parameters:
@@ -315,7 +330,7 @@ strlib_result_t strlib_str_remove_chars(strlib_str_t *s,
 ** Side Effects:
 **     1) The strlib string `s` has occurences of `substr` removed.
 */
-strlib_result_t strlib_str_remove_substr(strlib_str_t *s, const char *substr);
+strlib_result_t strlib_remove_substr(strlib_str_t *s, const char *substr);
 
 /* Description: Sets the contents of the strlib string `s` using
 **     the character array `buf`, up to the size of `size`.
@@ -328,8 +343,7 @@ strlib_result_t strlib_str_remove_substr(strlib_str_t *s, const char *substr);
 ** Side Effects:
 **     1) The contents of `buf` are placed into strlib string `s`.
 */
-strlib_result_t strlib_str_set(strlib_str_t *s, const char *buf,
-                               const size_t size);
+strlib_result_t strlib_set(strlib_str_t *s, const char *buf, const size_t size);
 
 /* Description: Destructs a strlib string `s`.
 ** Parameters:
@@ -343,7 +357,7 @@ strlib_result_t strlib_str_set(strlib_str_t *s, const char *buf,
 **     1) The strlib string at the the address stored in the pointer `s` is
 **        destroyed and the pointer is nullified.
 */
-strlib_result_t strlib_str_free(strlib_str_t *s);
+strlib_result_t strlib_free(strlib_str_t *s);
 
 #endif  // #ifndef STRLIB_H
 

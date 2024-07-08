@@ -11,7 +11,7 @@ struct strlib_str_t {
   char *chars;
 };
 
-strlib_result_t strlib_str_init(strlib_str_t **s) {
+strlib_result_t strlib_init(strlib_str_t **s) {
   // create space for opaque pointer
   (*s) = (strlib_str_t *)calloc(1, sizeof(strlib_str_t));
 
@@ -37,10 +37,9 @@ strlib_result_t strlib_str_init(strlib_str_t **s) {
   };
 }
 
-strlib_result_t strlib_str_find_char(strlib_str_t *s, size_t *positions,
-                                     size_t *num_positions,
-                                     const size_t positions_size,
-                                     const char c) {
+strlib_result_t strlib_find_char(strlib_str_t *s, size_t *positions,
+                                 size_t *num_positions,
+                                 const size_t positions_size, const char c) {
   // initialize num positions found and start walking the string
   *num_positions = 0;
   for (size_t i = 0; i < s->length; i++) {
@@ -63,11 +62,10 @@ strlib_result_t strlib_str_find_char(strlib_str_t *s, size_t *positions,
   };
 }
 
-strlib_result_t strlib_str_find_substr(strlib_str_t *s,
-                                       strlib_index_pair_t *positions,
-                                       size_t *num_positions,
-                                       const size_t positions_size,
-                                       const char *substr) {
+strlib_result_t strlib_find_substr(strlib_str_t *s, strlib_slice_t *positions,
+                                   size_t *num_positions,
+                                   const size_t positions_size,
+                                   const char *substr) {
   // initialize substring finding
   char *substr_head = NULL;
   *num_positions = 0;
@@ -83,7 +81,7 @@ strlib_result_t strlib_str_find_substr(strlib_str_t *s,
     }
 
     // add found position to positions array and increment positions counter
-    positions[(*num_positions)++] = (strlib_index_pair_t){
+    positions[(*num_positions)++] = (strlib_slice_t){
         .start = (size_t)(substr_head - s->chars),
         .end = (size_t)(substr_head - s->chars) + (strlen(substr) - 1)};
 
@@ -97,12 +95,12 @@ strlib_result_t strlib_str_find_substr(strlib_str_t *s,
   };
 }
 
-strlib_result_t strlib_str_insert_char(strlib_str_t *s, const char c,
-                                       const size_t position) {
+strlib_result_t strlib_insert_char(strlib_str_t *s, const char c,
+                                   const size_t position) {
   assert(s);
 
   // error if inserting past length
-  if (position >= s->length)
+  if (position > s->length)
     return (strlib_result_t){
         .code = STRLIB_E_BAD_INDEX,
     };
@@ -127,42 +125,44 @@ strlib_result_t strlib_str_insert_char(strlib_str_t *s, const char c,
   };
 }
 
-strlib_result_t strlib_str_insert_chars(strlib_str_t *s, const char *cs,
-                                        const size_t position) {
+strlib_result_t strlib_insert_chars(strlib_str_t *s, const char *cs,
+                                    const size_t position,
+                                    const bool reversed) {
   assert(s);
+  size_t strlen_cs = strlen(cs);
 
   // error if inserting past length
-  if (position >= s->length)
+  if (position > s->length)
     return (strlib_result_t){
         .code = STRLIB_E_BAD_INDEX,
     };
 
   // allocate capacity for additional chars if needed
-  if ((s->length + strlen(cs)) >= s->capacity) {
-    s->capacity += strlen(cs);
+  if ((s->length + strlen_cs) >= s->capacity) {
+    s->capacity += strlen_cs;
     s->chars = (char *)realloc(s->chars, s->capacity);
   }
 
   // move chars to make room for insert
-  for (size_t i = s->length + strlen(cs); i >= (position + strlen(cs)); i--) {
-    s->chars[i] = s->chars[i - strlen(cs)];
+  for (size_t i = s->length + strlen_cs; i >= (position + strlen_cs); i--) {
+    s->chars[i] = s->chars[i - strlen_cs];
   }
 
   // write cs into position
-  for (size_t i = 0; i < strlen(cs); i++) {
-    s->chars[i + position] = cs[i];
+  for (size_t i = 0; i < strlen_cs; i++) {
+    s->chars[i + position] = (reversed) ? cs[strlen_cs - i] : cs[i];
   }
 
   // update length for additional substr length
-  s->length += strlen(cs);
+  s->length += strlen_cs;
 
   return (strlib_result_t){
       .code = STRLIB_E_SUCCESS,
   };
 }
 
-strlib_result_t strlib_str_get(const strlib_str_t *s, char *buf,
-                               const size_t size) {
+strlib_result_t strlib_get(const strlib_str_t *s, char *buf,
+                           const size_t size) {
   assert(s);
 
   // error if the buffer is to small
@@ -179,8 +179,8 @@ strlib_result_t strlib_str_get(const strlib_str_t *s, char *buf,
   };
 }
 
-strlib_result_t strlib_str_get_char(const strlib_str_t *s, char *c,
-                                    const size_t position) {
+strlib_result_t strlib_get_char(const strlib_str_t *s, char *c,
+                                const size_t position) {
   assert(s);
 
   // error if trying to get position outside of string
@@ -197,9 +197,9 @@ strlib_result_t strlib_str_get_char(const strlib_str_t *s, char *c,
   };
 }
 
-strlib_result_t strlib_str_get_chars(const strlib_str_t *s, char *buf,
-                                     const size_t size,
-                                     const strlib_index_pair_t position) {
+strlib_result_t strlib_get_chars(const strlib_str_t *s, char *buf,
+                                 const size_t size,
+                                 const strlib_slice_t position) {
   assert(s);
 
   // error if trying to get position outside of string
@@ -233,7 +233,7 @@ strlib_result_t strlib_str_get_chars(const strlib_str_t *s, char *buf,
   };
 }
 
-strlib_result_t strlib_str_get_length(const strlib_str_t *s, size_t *length) {
+strlib_result_t strlib_get_length(const strlib_str_t *s, size_t *length) {
   assert(s);
   *length = s->length;
   return (strlib_result_t){
@@ -241,8 +241,7 @@ strlib_result_t strlib_str_get_length(const strlib_str_t *s, size_t *length) {
   };
 }
 
-strlib_result_t strlib_str_get_capacity(const strlib_str_t *s,
-                                        size_t *capacity) {
+strlib_result_t strlib_get_capacity(const strlib_str_t *s, size_t *capacity) {
   assert(s);
   *capacity = s->capacity;
   return (strlib_result_t){
@@ -250,8 +249,8 @@ strlib_result_t strlib_str_get_capacity(const strlib_str_t *s,
   };
 }
 
-strlib_result_t strlib_str_replace_char(strlib_str_t *s, const char c,
-                                        const size_t position) {
+strlib_result_t strlib_replace_char(strlib_str_t *s, const char c,
+                                    const size_t position) {
   assert(s);
 
   // error if trying to replace position outside of string
@@ -268,41 +267,22 @@ strlib_result_t strlib_str_replace_char(strlib_str_t *s, const char c,
   };
 }
 
-strlib_result_t strlib_str_replace_chars(strlib_str_t *s, const char *cs,
-                                         const strlib_index_pair_t position) {
+strlib_result_t strlib_replace_chars(strlib_str_t *s, const char *cs,
+                                     const strlib_slice_t position) {
   assert(s);
 
-  // start and end are inclusive points on the indicies,
-  // cs = ddddd, start = 1, end = 5
-  // abcdefg
-  // 0123456
-  //  ddddd
-  // strlen("ddddd") = 5
-  // (start - end) = 4
-  // We therefore have to add one in the comparison
-  size_t start = position.start;
-  size_t end = position.end;
-  size_t position_distance =
-      (end > start) ? (end - start) + 1 : (start - end) + 1;
+  bool reversed = (position.start > position.end) ? true : false;
+  size_t first_idx =
+      (position.start > position.end) ? position.end : position.start;
 
-  // error if number of chars to replace does not align with positions
-  if (strlen(cs) != position_distance)
-    return (strlib_result_t){
-        .code = STRLIB_E_BAD_SIZE,
-    };
+  strlib_result_t result = strlib_remove_chars(s, position);
+  if (result.code != STRLIB_E_SUCCESS) {
+    return result;
+  }
 
-  // error if trying to get position outside of string
-  if (position.start >= s->length || position.end >= s->length ||
-      position.start == position.end)
-    return (strlib_result_t){
-        .code = STRLIB_E_BAD_INDEX,
-    };
-
-  // replace the slice from start to finish
-  size_t idx = position.start;
-  for (size_t i = 0; i < strlen(cs); i++) {
-    (*s).chars[idx] = cs[i];
-    idx = (position.end > position.start) ? idx + 1 : idx - 1;
+  result = strlib_insert_chars(s, cs, first_idx, reversed);
+  if (result.code != STRLIB_E_SUCCESS) {
+    return result;
   }
 
   return (strlib_result_t){
@@ -310,7 +290,49 @@ strlib_result_t strlib_str_replace_chars(strlib_str_t *s, const char *cs,
   };
 }
 
-strlib_result_t strlib_str_remove_char(strlib_str_t *s, const size_t position) {
+strlib_result_t strlib_replace_substr(strlib_str_t *s, const char *substr,
+                                      const char *cs) {
+  assert(s);
+  size_t num_positions = 0;
+  strlib_slice_t positions[256] = {0};
+  size_t len_substr = strlen(substr);
+  size_t len_cs = strlen(cs);
+  size_t offset =
+      (len_substr <= len_cs) ? len_cs - len_substr : len_substr - len_cs;
+
+  strlib_result_t result =
+      strlib_find_substr(s, &positions[0], &num_positions, 256, substr);
+  if (result.code != STRLIB_E_SUCCESS) {
+    return result;
+  }
+
+  while (num_positions != 0) {
+    for (size_t i = 0; i <= num_positions - 1; i++) {
+      // position shifts for existing removed characters
+      size_t start = (len_substr <= len_cs)
+                         ? (positions[i].start) + (offset * i)
+                         : (positions[i].start) - (offset * i);
+      size_t end = (len_substr <= len_cs) ? (positions[i].end) + (offset * i)
+                                          : (positions[i].end) - (offset * i);
+      result = strlib_replace_chars(
+          s, cs, (strlib_slice_t){.start = start, .end = end});
+      if (result.code != STRLIB_E_SUCCESS) {
+        return result;
+      }
+    }
+
+    result = strlib_find_substr(s, &positions[0], &num_positions, 256, substr);
+    if (result.code != STRLIB_E_SUCCESS) {
+      return result;
+    }
+  }
+
+  return (strlib_result_t){
+      .code = STRLIB_E_SUCCESS,
+  };
+}
+
+strlib_result_t strlib_remove_char(strlib_str_t *s, const size_t position) {
   assert(s);
 
   // error if trying to remove position outside of string
@@ -333,8 +355,8 @@ strlib_result_t strlib_str_remove_char(strlib_str_t *s, const size_t position) {
   };
 }
 
-strlib_result_t strlib_str_remove_chars(strlib_str_t *s,
-                                        const strlib_index_pair_t position) {
+strlib_result_t strlib_remove_chars(strlib_str_t *s,
+                                    const strlib_slice_t position) {
   assert(s);
 
   // error if trying to remove position outside of string
@@ -363,30 +385,30 @@ strlib_result_t strlib_str_remove_chars(strlib_str_t *s,
   };
 }
 
-strlib_result_t strlib_str_remove_substr(strlib_str_t *s, const char *substr) {
+strlib_result_t strlib_remove_substr(strlib_str_t *s, const char *substr) {
   assert(s);
   size_t num_positions = 0;
-  strlib_index_pair_t positions[256] = {0};
+  strlib_slice_t positions[256] = {0};
 
   strlib_result_t result =
-      strlib_str_find_substr(s, &positions[0], &num_positions, 256, substr);
+      strlib_find_substr(s, &positions[0], &num_positions, 256, substr);
   if (result.code != STRLIB_E_SUCCESS) {
     return result;
   }
 
   while (num_positions != 0) {
     for (size_t i = 0; i <= num_positions - 1; i++) {
-      result = strlib_str_remove_chars(
-          s, (strlib_index_pair_t){
-                 .start = (positions[i].start) - (strlen(substr) * i),
-                 .end = (positions[i].end) - (strlen(substr) * i)});
+      // position shifts for existing removed characters
+      size_t start = (positions[i].start) - (strlen(substr) * i);
+      size_t end = (positions[i].end) - (strlen(substr) * i);
+      result =
+          strlib_remove_chars(s, (strlib_slice_t){.start = start, .end = end});
       if (result.code != STRLIB_E_SUCCESS) {
         return result;
       }
     }
 
-    result =
-        strlib_str_find_substr(s, &positions[0], &num_positions, 256, substr);
+    result = strlib_find_substr(s, &positions[0], &num_positions, 256, substr);
     if (result.code != STRLIB_E_SUCCESS) {
       return result;
     }
@@ -397,8 +419,8 @@ strlib_result_t strlib_str_remove_substr(strlib_str_t *s, const char *substr) {
   };
 }
 
-strlib_result_t strlib_str_set(strlib_str_t *s, const char *buf,
-                               const size_t size) {
+strlib_result_t strlib_set(strlib_str_t *s, const char *buf,
+                           const size_t size) {
   assert(s);
 
   // set existing characters to null
@@ -419,7 +441,7 @@ strlib_result_t strlib_str_set(strlib_str_t *s, const char *buf,
   };
 }
 
-strlib_result_t strlib_str_free(strlib_str_t *s) {
+strlib_result_t strlib_free(strlib_str_t *s) {
   assert(s);
 
   // free internal chars

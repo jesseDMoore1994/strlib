@@ -58,6 +58,7 @@ format:
 clean:
 	rm -rf $(OBJDIR)
 	rm -rf $(DISTDIR)
+	rm -rf vgcore.*
 
 test: $(DISTDIR)/test
 	valgrind --leak-check=full \
