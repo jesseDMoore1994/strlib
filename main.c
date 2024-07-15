@@ -121,15 +121,21 @@ static void test_string_operations(void) {
   ret1 = strlib_init(&s);
   assert(ret1.code == STRLIB_E_SUCCESS);
 
+  ret1 = strlib_set(s, "abcdefghijklmnopqrstuvwxyz", 27);
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  ret1 = strlib_get_slice(s, buf, 27, (strlib_slice_t){.start = 25, .end = 0});
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  assert(strcmp(buf, "zyxwvutsrqponmlkjihgfedcba") == 0);
+
   // test get chars
   ret1 = strlib_set(s, "bud", 4);
   assert(ret1.code == STRLIB_E_SUCCESS);
-  ret1 = strlib_get_chars(s, buf, 4, (strlib_slice_t){.start = 2, .end = 0});
+  ret1 = strlib_get_slice(s, buf, 4, (strlib_slice_t){.start = 2, .end = 0});
   assert(ret1.code == STRLIB_E_SUCCESS);
   assert(strcmp(buf, "dub") == 0);
 
   // test insert chars
-  ret1 = strlib_insert_chars(s, "air", 0, false);
+  ret1 = strlib_insert_chars(s, "air", 3, 0, false);
   assert(ret1.code == STRLIB_E_SUCCESS);
   ret1 = strlib_get(s, buf, 256);
   assert(ret1.code == STRLIB_E_SUCCESS);
@@ -140,10 +146,12 @@ static void test_string_operations(void) {
 
   // test replace chars
   ret1 =
-      strlib_replace_chars(s, "ddddd", (strlib_slice_t){.start = 0, .end = 3});
+      strlib_replace_slice(s, "ddddd", (strlib_slice_t){.start = 0, .end = 3});
   assert(ret1.code == STRLIB_E_SUCCESS);
+  // "dddddud"
   ret1 =
-      strlib_replace_chars(s, "ddddd", (strlib_slice_t){.start = 0, .end = 4});
+      strlib_replace_slice(s, "ddddd", (strlib_slice_t){.start = 0, .end = 4});
+  // "dddddud"
   assert(ret1.code == STRLIB_E_SUCCESS);
   ret1 = strlib_get(s, buf, 256);
   assert(ret1.code == STRLIB_E_SUCCESS);
@@ -153,7 +161,7 @@ static void test_string_operations(void) {
   assert(x == 7);
 
   // test remove chars
-  ret1 = strlib_remove_chars(s, (strlib_slice_t){.start = 0, .end = 4});
+  ret1 = strlib_remove_slice(s, (strlib_slice_t){.start = 0, .end = 4});
   assert(ret1.code == STRLIB_E_SUCCESS);
   ret1 = strlib_get(s, buf, 256);
   assert(ret1.code == STRLIB_E_SUCCESS);
@@ -182,7 +190,7 @@ static void test_string_operations(void) {
   assert(x == 8);
 
   // test replace substring
-  ret1 = strlib_set(s, "foobarrrrabbarr", 16);
+  ret1 = strlib_set(s, "foobarrrrabbarr", 15);
   ret1 = strlib_replace_substr(s, "barr", "baz");
   assert(ret1.code == STRLIB_E_SUCCESS);
   ret1 = strlib_get(s, buf, 256);
@@ -192,9 +200,26 @@ static void test_string_operations(void) {
   assert(ret1.code == STRLIB_E_SUCCESS);
 }
 
+/*static void test_specific_example(void) {
+  strlib_str_t *s = NULL;
+  char buf[256] = {0};
+  strlib_result_t ret1;
+
+  ret1 = strlib_init(&s);
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  ret1 = strlib_set(s, "foobarrrrabbarr", 15);
+  ret1 = strlib_replace_substr(s, "barr", "baz");
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  ret1 = strlib_get(s, buf, 256);
+  assert(ret1.code == STRLIB_E_SUCCESS);
+  assert(strcmp(buf, "foobazrrabbaz") == 0);
+}*/
+
 int main(void) {
   test_init();
   printf("test_init() passed!\n");
+  // test_specific_example();
+  // printf("test_specific_example() passed!\n");
   test_set_get();
   printf("test_set_get() passed!\n");
   test_char_operations();
